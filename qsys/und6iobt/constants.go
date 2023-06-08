@@ -12,5 +12,5 @@ const (
 
 	ReadyForPairing = "ready For Pairing"
 	PairingFailed   = "pairing Failed"
-	Error           = "something went wrong"
+	ErrorMessage    = "something went wrong"
 )
