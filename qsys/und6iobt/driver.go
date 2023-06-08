@@ -2,6 +2,7 @@ package und6iobt
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -152,11 +153,14 @@ func (dc *Driver) write(p []byte) (int, error) {
 
 func (dc *Driver) read(count int) string {
 	readData := make([]byte, count)
-	command, err := dc.Comm.Read(readData)
+
+	n, err := dc.Comm.Read(readData)
 	if err != nil {
-		return Error
+		fmt.Println("Failed to read from connection:", err)
+		return ErrorMessage
 	}
-	return string(command)
+	return string(readData[:n])
+
 }
 
 func (dc *Driver) connectAndClose(action func() error) error {
