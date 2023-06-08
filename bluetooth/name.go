@@ -4,3 +4,8 @@ package bluetooth
 type HasName interface {
 	Name() (string, error)
 }
+
+const (
+	GetName    = "BTN<CR>"
+	NameFailed = "BT Device Name failed"
+)
