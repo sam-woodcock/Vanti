@@ -78,7 +78,7 @@ func (dc *Driver) ConnectionChanged(last bluetooth.Connection) (bluetooth.Connec
 	var current bluetooth.Connection
 	err := dc.connectAndClose(func() error {
 		var err error
-		current, err = dc.CheckConnection()
+		current, err = dc.checkConnection()
 		return err
 	})
 
@@ -93,7 +93,7 @@ func (dc *Driver) ConnectionChanged(last bluetooth.Connection) (bluetooth.Connec
 	return bluetooth.ConnectionUnknown, errors.New(ErrorMessage)
 }
 
-func (dc *Driver) CheckConnection() (bluetooth.Connection, error) {
+func (dc *Driver) checkConnection() (bluetooth.Connection, error) {
 	var connection bluetooth.Connection
 	err := dc.connectAndClose(func() error {
 		n, err := dc.write([]byte(BTStatus))
