@@ -24,6 +24,11 @@ type Driver struct {
 	Comm comm.Transport
 }
 
+func New(transport comm.Transport) *Driver {
+	return &Driver{
+		Comm: transport,
+	}
+}
 func (dc *Driver) Announce() error {
 	if err := dc.connectAndClose(func() error {
 		n, err := dc.write([]byte(ActivatePairing))
