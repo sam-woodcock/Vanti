@@ -17,4 +17,27 @@ const (
 	ConnectionNotConnected
 	// ConnectionConnected indicates that there is an active Bluetooth connection.
 	ConnectionConnected
+	ConnectionConnectedAVRCPNotSupported
+	ConnectionConnectedAVRCPSupported
+	ConnectionConnectedAVRCPPDUSupported
 )
+
+func GetConnectionStatus(connection int) Connection {
+	switch Connection(connection) {
+	case ConnectionUnknown:
+		return ConnectionUnknown
+	case ConnectionNotConnected:
+		return ConnectionNotConnected
+	case ConnectionConnected, ConnectionConnectedAVRCPNotSupported, ConnectionConnectedAVRCPSupported, ConnectionConnectedAVRCPPDUSupported:
+		return ConnectionConnected
+	default:
+		return ConnectionUnknown
+	}
+}
+
+// 0 = Idle
+// 1 = Discoverable
+// 2 = Connected – Unknown AVRCP support
+// 3 = Connected – AVRCP Not Supported
+// 4 = Connected – AVRCP Supported
+// 5 = Connected – AVRCP & PDU Supported

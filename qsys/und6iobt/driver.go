@@ -21,14 +21,19 @@ const (
 type Driver struct {
 	// Comm abstracts the underlying transport communication with the device.
 	// We can assume that the underlying implementation of Comm is compatible with our device model.
-	Comm comm.Transport
+	Comm      comm.Transport
+	IPAddress string
+	Port      int
 }
 
-func New(transport comm.Transport) *Driver {
+func New(transport comm.Transport, ipAddress string, port int) *Driver {
 	return &Driver{
-		Comm: transport,
+		Comm:      transport,
+		IPAddress: ipAddress,
+		Port:      port,
 	}
 }
+
 func (dc *Driver) Announce() error {
 	if err := dc.connectAndClose(func() error {
 		n, err := dc.write([]byte(ActivatePairing))
@@ -67,9 +72,11 @@ func (dc *Driver) Name() (string, error) {
 		log.Printf("Bytes written: %d\n", n)
 
 		//Read response
-		command := dc.read(16)
+		command := dc.read(32)
 		if string(command) != Error {
 			name = strings.TrimSuffix(command, CR)
+			name = strings.TrimPrefix(name, "ACK BTN ")
+			name = strings.TrimSpace(name)
 			return nil
 		}
 		return errors.New(bluetooth.NameFailed)
@@ -101,48 +108,33 @@ func (dc *Driver) ConnectionChanged(last bluetooth.Connection) (bluetooth.Connec
 
 func (dc *Driver) checkConnection() (bluetooth.Connection, error) {
 	var connection bluetooth.Connection
-	err := dc.connectAndClose(func() error {
-		n, err := dc.write([]byte(BTStatus))
-		if err != nil {
-			return err
-		}
 
-		log.Printf("Bytes written: %d\n", n)
-
-		//Read response
-		command := dc.read(16)
-
-		re := regexp.MustCompile(`\d+`)
-		stringNumber := re.FindString(command)
-		match, err := regexp.MatchString(`\d+`, command)
-		if err != nil {
-			log.Println("Error:", err)
-			return errors.New(Error)
-		}
-		if match {
-			num, err := strconv.Atoi(stringNumber)
-			if err != nil {
-				log.Println("Error:", err)
-				return errors.New(Error)
-			}
-
-			// Extract value back
-			// 0 = Idle
-			// 1 = Discoverable
-			// 2 = Connected – Unknown AVRCP support
-			// 3 = Connected – AVRCP Not Supported
-			// 4 = Connected – AVRCP Supported
-			// 5 = Connected – AVRCP & PDU Supported
-
-			if num > 2 {
-				connection = bluetooth.ConnectionConnected // Output: e.g unD6IO-BT-010203 from ACK BTN unD6IO-BT
-			}
-		}
-		return nil
-	})
-
+	n, err := dc.write([]byte(BTStatus))
 	if err != nil {
 		return bluetooth.ConnectionUnknown, err
+	}
+
+	log.Printf("Bytes written: %d\n", n)
+
+	// Read response
+	command := dc.read(16)
+
+	re := regexp.MustCompile(`\d+`)
+	stringNumber := re.FindString(command)
+	match, err := regexp.MatchString(`\d+`, command)
+	if err != nil {
+		log.Println("Error:", err)
+		return bluetooth.ConnectionUnknown, errors.New(Error)
+	}
+	if match {
+		num, err := strconv.Atoi(stringNumber)
+		if err != nil {
+			log.Println("Error:", err)
+			return bluetooth.ConnectionUnknown, errors.New(Error)
+		}
+
+		status := bluetooth.GetConnectionStatus(num)
+		connection = bluetooth.Connection(status)
 	}
 
 	return connection, nil
